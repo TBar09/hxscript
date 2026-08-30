@@ -80,9 +80,33 @@ class Module {
 
 		this.origin = origin;
 		this.name = name;
-		this.pack = pack;
+		this.pack = cleanPack(pack);
 
 		parse(string);
+	}
+
+	/**
+	 * Drops the segments of a package that name nothing.
+	 *
+	 * A host that derives a package from a directory path reaches the source root with
+	 * `''.split('/')`, which is `['']` and not `[]`. Both name the root package, but every compile
+	 * path built from the first one gains a leading dot, so the environment indexed the module's
+	 * types under `.Name` while every lookup asked for `Name` and a sibling in the root package
+	 * could not be found at all.
+	 *
+	 * @param pack The package segments; null is kept, because a module with no package at all is a
+	 *             different thing from one in the root package and the interpreter reads them apart.
+	 * @return The segments that name something.
+	 */
+	static function cleanPack(pack:Array<String>):Array<String> {
+		if (pack == null)
+			return null;
+
+		for (segment in pack)
+			if (segment == null || segment.length == 0)
+				return pack.filter(s -> s != null && s.length > 0);
+
+		return pack;
 	}
 
 	/**

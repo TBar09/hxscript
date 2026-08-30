@@ -81,6 +81,35 @@ class ImportTest {
 			world([{pack: 'game.deep', name: 'Buried', body: 'public static function tag():String return "buried";'}], 'game', 'Play', '',
 				'return Buried.tag();')
 				.indexOf('threw') == 0);
+
+		/*
+			The root package, named the way a host that walks a source tree names it. Splitting the
+			empty remainder of a directory path gives `['']`, which is the root package with one
+			segment that says nothing, and every compile path built from it came out as `.Name`. The
+			world then indexed `.Base` while the subclass asked for `Base`, so a root-package module
+			could not extend or reach its own sibling, and the miss was reported as `Type not found`
+			where the type was initialized rather than where it was written.
+		*/
+		var root:Array<{pack:String, name:String, body:String}> = [
+			{
+				pack: '',
+				name: 'Base',
+				body: 'public var n:Int = 3; public function new() {} public function tag():String return "base " + n;'
+			}
+		];
+
+		ok('a sibling in the root package is reached', world(root, '', 'Play', '', 'return new Base().tag();') == 'base 3');
+
+		ok('a root-package module extends its sibling',
+			worldWith(root, '', 'Play', '', 'return new Sub().tag();', [
+				{
+					pack: '',
+					name: 'Sub',
+					body: 'public function new() { super(); } override public function tag():String return "sub " + n;',
+					extend: 'Base'
+				}
+			])
+			== 'sub 3');
 	}
 
 	/**
@@ -102,8 +131,14 @@ class ImportTest {
 		return build(pack, userPack, userName, head, body, true);
 	}
 
+	/** As `world`, but with extra classes that name a base to extend. */
+	static function worldWith(pack:Array<{pack:String, name:String, body:String}>, userPack:String, userName:String, head:String,
+			body:String, extra:Array<{pack:String, name:String, body:String, extend:String}>):String {
+		return build(pack, userPack, userName, head, body, false, extra);
+	}
+
 	static function build(pack:Array<{pack:String, name:String, body:String}>, userPack:String, userName:String, head:String, body:String,
-			userFirst:Bool):String {
+			userFirst:Bool, ?extra:Array<{pack:String, name:String, body:String, extend:String}>):String {
 		try {
 			var env:Environment = new Environment();
 
@@ -117,6 +152,10 @@ class ImportTest {
 			for (one in pack)
 				add(env, one.pack, one.name, one.body);
 
+			if (extra != null)
+				for (one in extra)
+					add(env, one.pack, one.name, one.body, '', one.extend);
+
 			if (!userFirst)
 				user();
 
@@ -127,7 +166,7 @@ class ImportTest {
 				module.startTypes(env);
 			}
 
-			var cls:ScriptedClass = cast env.resolve(userPack + '.' + userName);
+			var cls:ScriptedClass = cast env.resolve(userPack.length > 0 ? userPack + '.' + userName : userName);
 			return Std.string(Reflect.callMethod(null, cls.reflectGetField('run'), []));
 		} catch (e:Dynamic) {
 			return 'threw: ' + Std.string(e);
@@ -135,15 +174,20 @@ class ImportTest {
 	}
 
 	/**
+	 * The package is split the way a host that walks a source tree splits it, empty remainder and
+	 * all, so the root package arrives as `['']` rather than `[]`.
+	 *
 	 * @param env The world.
-	 * @param pack The package, dotted.
+	 * @param pack The package, dotted, empty for the root package.
 	 * @param name The class name.
 	 * @param body Its members.
 	 * @param head Declarations above the class.
+	 * @param extend The base class to extend, if any.
 	 */
-	static function add(env:Environment, pack:String, name:String, body:String, head:String = ''):Void {
+	static function add(env:Environment, pack:String, name:String, body:String, head:String = '', extend:String = null):Void {
 		var module:Module = new Module('', name, pack.split('.'), 'importtest');
-		module.parse('package ' + pack + ';\n' + head + '\nclass ' + name + ' {\n' + body + '\n}\n');
+		module.parse('package' + (pack.length > 0 ? ' ' + pack : '') + ';\n' + head + '\nclass ' + name
+			+ (extend == null ? '' : ' extends ' + extend) + ' {\n' + body + '\n}\n');
 		env.addModule(module);
 	}
 }
