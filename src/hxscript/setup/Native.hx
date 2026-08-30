@@ -179,7 +179,7 @@ class Native {
 		if (!FileSystem.exists(into))
 			FileSystem.createDirectory(into);
 
-		var args:Array<String> = ['-shared', '-fvisibility=hidden'];
+		var args:Array<String> = ['-shared', '-fvisibility=hidden', '-fPIC'];
 		for (a in shared(carried, headers))
 			args.push(a);
 
