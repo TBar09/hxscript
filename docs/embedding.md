@@ -401,6 +401,22 @@ world.start();
 
 Every module and script in that world sees the same `world.variables`.
 
+The `[]` is the module's package, and it has to be the package the script itself declares. Walk
+subdirectories and the segments below the source root are that package, so a script in `scripts/ai/`
+is loaded with `['ai']` and has to open with `package ai;`, exactly as Haxe requires. A mismatch is a
+parse error naming both, and the module declares nothing. Build the package from the file's own
+directory and the two always agree, whether the walk reached the file or `readDirectory` handed it
+back nested:
+
+```haxe
+var below = Path.directory(path).substr(root.length);
+var pack = below.length == 0 ? [] : below.substr(1).split('/');
+```
+
+A bare `'...'.split('/')` handed straight in gives the root package as `['']` rather than `[]`, a
+segment that names nothing. Segments like that are dropped now, but earlier releases indexed
+that module's types under a leading dot and could not find a sibling in the root package at all.
+
 **Do not name scripts from the host.** Writing `spawn("HiveQueen")` in game code undoes most of the
 benefit, because every new piece of content then needs a host change. Ask the world what it has:
 

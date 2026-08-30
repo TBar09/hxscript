@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A module in the root package could not see its own siblings when the host derived the package
+  from a directory path.** Walking a source tree gives the root the empty remainder of a path, and
+  `''.split('/')` is `['']`, not `[]`. One segment that names nothing still reads as the root package
+  everywhere a package is joined back into a string, so `Module.path` and the module's own type table
+  looked right, and the world's index did not: a compile path is built by pushing the name onto the
+  segments, so `Base` was indexed as `.Base` while every lookup for it asked for `Base`.
+
+  A sibling was then unreachable from the root package alone, and the miss surfaced late and far from
+  its cause, as `Type not found: Base` while the class that extended it was being initialized rather
+  than where the name was written. A package now drops the segments that name nothing as the module
+  is built, so `['']`, `[]` and `['', '']` are the one package they all mean. A null package is still
+  a null package: a module with no package at all is a different thing from one in the root package,
+  and a scripted class reads them apart to decide what its interpreter's package path is.
+
 ## 2.0.4
 
 ### Added
