@@ -202,6 +202,13 @@ class Corpus {
 		check('an enum abstract annotated, an accessor that is false',
 			'var a:HostAxes = HostAxes.X; return Std.string(a.y);', 'false', '', 'import HostAxes;');
 
+		check('trace', 'trace("t"); return 1;', '1');
+		check('trace of several values', 'trace("a", 1, true); return 2;', '2');
+		check('trace in a loop', 'var n = 0; for (i in 0...2) { trace(i); n += i; } return n;', '1');
+		check('a local named trace wins', 'var trace = function(v) return v; return trace("x");', 'x');
+		check('a static named trace wins', 'return trace("y");', 'y',
+			'static function trace(v:Dynamic):Dynamic return v;');
+
 		at('modules');
 		check('interval as a value', 'var it = 0...3; var t = 0; while (it.hasNext()) t += it.next(); return t;', '3');
 		check('interval bound to a local then looped', 'var it = 1...4; var t = 0; for (v in it) t += v; return t;',

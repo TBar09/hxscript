@@ -4,6 +4,28 @@
 
 ### Fixed
 
+- **`trace` refused its module on HashLink, so any script that traced was interpreted.** The two
+  backends asked the world different questions. cppia wires the emitter to the module's own
+  interpreter, so a bare name reaches everything `Interp.resolve` reaches; the HashLink backend
+  checked the module's imports, the world's variables and the type table, and never the interpreter's
+  own variable table, which is where `setDefaults` puts `trace`. It resolved to nothing, and the
+  fallback that would have compiled it anyway is only armed for a module declaring module-level
+  fields, so a module made of classes was refused whole over one call. Reported as `trace, which is
+  neither a local nor a field here`, which reads like a parser complaint rather than a missing
+  binding.
+
+  Binding that closure would have compiled the call and lost the position: what it prints comes from
+  `Interp.posInfos`, the interpreter's own current position, and nothing is interpreting a compiled
+  method. So `trace` is now a call the emitter knows, with the file and line written in beside it as
+  constants, which is what Haxe does with a `trace` and costs nothing at runtime. A compiled trace
+  prints exactly what the interpreted one prints, `customParams` included. A script that declares its
+  own `trace`, as a local, a member, a static, a module-level function or a host static, still means
+  its own.
+
+  hxcpp was never affected, checked rather than assumed: cppia already compiled the call and already
+  reported the right line. Five cases cover it in the conformance corpus, which had none, and that is
+  why nothing caught this: 350 cases now, and hl-bytecode agrees with hl-interp on all of them.
+
 - **A module in the root package could not see its own siblings when the host derived the package
   from a directory path.** Walking a source tree gives the root the empty remainder of a path, and
   `''.split('/')` is `['']`, not `[]`. One segment that names nothing still reads as the root package

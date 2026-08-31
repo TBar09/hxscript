@@ -2589,6 +2589,48 @@ class Emitter {
 	}
 
 	/**
+	 * Whether something nearer than the interpreter's default answers to `trace`.
+	 *
+	 * A bare name reaches locals and `this` first, then what the module and the host declare, and
+	 * only then the variable table the default lives in. Anything in front of that table is a name
+	 * the script or the host meant, and it is compiled as itself.
+	 *
+	 * @return Whether `trace` here means something other than the default.
+	 */
+	function shadowsTrace():Bool {
+		return (lookup('trace') != null
+			|| isStaticOf(owning, 'trace')
+			|| propertyOf(inside, 'trace') != null
+			|| isMemberOf('trace')
+			|| hostDeclares('trace')
+			|| moduleNames.exists('trace')
+			|| declared.exists('trace')
+			|| ambientMembers.exists('trace'));
+	}
+
+	/**
+	 * Writes a `trace`, with the position of the call written in beside it.
+	 *
+	 * @param params The arguments, of which there is at least one.
+	 * @param slot Where the result lands, which is the null the interpreter's own answers with.
+	 * @param pos Where the call was written.
+	 */
+	function emitTrace(params:Array<Expr>, slot:Int, pos:Position):Void {
+		var first:Int = dynOf(params[0]);
+		var rest:Int = reg(tDyn);
+
+		if (params.length > 1)
+			emitArrayDecl(params.slice(1), rest, pos);
+		else
+			ops.push({op: ONull, args: [rest]});
+
+		var line:Int = reg(tI32);
+		ops.push({op: OInt, args: [line, module.intId(pos == null ? 0 : pos.line)]});
+
+		callSupport('traced', [first, rest, named(pos == null ? '' : pos.origin), line], slot);
+	}
+
+	/**
 	 * Writes a call to a batch function.
 	 *
 	 * The call is given a register of what it declared and the result converted afterwards. Writing
@@ -2597,6 +2639,10 @@ class Emitter {
 	 */
 	function emitCall(callee:Expr, params:Array<Expr>, slot:Int, pos:Position):Void {
 		switch (callee.e) {
+			case EIdent('trace') if (params.length > 0 && !shadowsTrace()):
+				emitTrace(params, slot, pos);
+				return;
+
 			case EField({e: EIdent('super')}, name, _):
 				callSupport('superCall', [dynOf(thisExpr(pos)), named(owningPath()), named(name), gathered(params)],
 					slot);
@@ -3917,6 +3963,7 @@ class Emitter {
 		'get' => 'ddd',
 		'set' => 'dddv',
 		'raise' => 'dd',
+		'traced' => 'dddid',
 		'invoke' => 'dddd',
 		'abstractGet' => 'dddd',
 		'abstractCall' => 'ddddd',

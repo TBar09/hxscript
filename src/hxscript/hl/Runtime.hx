@@ -956,6 +956,32 @@ class Runtime {
 	}
 
 	/**
+	 * What `trace` compiles to.
+	 *
+	 * Haxe fills a call site's `PosInfos` while it compiles and the interpreter reads its own current
+	 * position, and compiled code has neither: nothing is interpreting it, so the position has to be
+	 * the one the emitter saw, passed in as two constants. That is what makes a compiled trace name
+	 * the script's own file and line instead of nothing, or instead of wherever an interpreter
+	 * happened to be standing.
+	 *
+	 * @param v What to print.
+	 * @param extra The arguments after the first, or null when there are none.
+	 * @param origin The script the call was written in.
+	 * @param line The line it was written on.
+	 * @return Null, which is what the interpreter's own `trace` answers with.
+	 */
+	public static function traced(v:Dynamic, extra:Dynamic, origin:Dynamic, line:Int):Dynamic {
+		var inf:haxe.PosInfos = cast {fileName: origin, lineNumber: line};
+		var rest:Array<Dynamic> = extra;
+
+		if (rest != null && rest.length > 0)
+			inf.customParams = rest;
+
+		haxe.Log.trace(Std.string(v), inf);
+		return null;
+	}
+
+	/**
 	 * Raises what the interpreter raises, for a construct that fails when it runs rather than when it
 	 * is compiled.
 	 *
