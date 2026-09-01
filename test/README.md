@@ -33,6 +33,19 @@ haxe test/eval/build.hxml                       # fastest, runs during compilati
 haxe test/cpp/build.hxml && ./bin_test/cpp/common/AllCommon.exe
 ```
 
+Completion, which no other suite here covers because it is not about running a script at all:
+
+```sh
+sh test/completion.sh              # against flixel, which is where it broke
+GAME=openfl sh test/completion.sh  # another game library
+GAME= sh test/completion.sh        # no game library, which passes either way
+```
+
+It asks an editor's question twice, once without the library and once with it, and both have to
+answer with the documentation above the function. A game library has to be in the build for it to
+mean anything: without one there are no scriptable bases, so no bridges are generated and the macro
+that could not run in display mode never runs.
+
 One test on its own, which is often what you want while fixing it:
 
 ```sh
