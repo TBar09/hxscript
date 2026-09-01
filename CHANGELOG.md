@@ -4,6 +4,21 @@
 
 ### Fixed
 
+- **Adding the library to the hxml an editor uses for completion broke completion.** A hover showed
+  loading and then nothing, and every other request went the same way, which reads as the library
+  being incompatible with the language server rather than as one macro that cannot run in one mode.
+
+  Bridge generation was the whole of it. A bridge re-emits its base's constructor, which means reading
+  that constructor back with `Context.getTypedExpr`, and a display compile does not type a function
+  body it was not asked about: what comes back is not an expression, and the request died with
+  `Invalid expression` thrown out of a macro rather than reported against any file. On a build with
+  flixel in it, measured, a hover went from 474ms without the library to seventeen seconds and a crash
+  with it.
+
+  No bridge is generated for a display request now. That costs completion nothing, since a bridge is a
+  generated class under `hxscript.wired` that scripts reach at runtime and no host writes against, and
+  the same hover answers in 1.7 seconds. A real build is untouched and still wires every bridge.
+
 - **`trace` refused its module on HashLink, so any script that traced was interpreted.** The two
   backends asked the world different questions. cppia wires the emitter to the module's own
   interpreter, so a bare name reaches everything `Interp.resolve` reaches; the HashLink backend

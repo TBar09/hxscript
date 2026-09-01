@@ -36,13 +36,22 @@ class Bridges {
 	 * A `final` class cannot be bridged at all, which is occasionally the right trade: keeping a
 	 * hot-path class `final` lets hxcpp devirtualise calls to it.
 	 *
+	 * **Nothing is generated for a display request.** A bridge re-emits its base's constructor,
+	 * which means reading that constructor back with `Context.getTypedExpr`, and a display
+	 * compile does not type a function body it was not asked about: what comes back is not an
+	 * expression and the request dies with `Invalid expression`. The editor shows a hover
+	 * loading and then nothing, which reads as the library breaking completion rather than as
+	 * one macro that cannot run in this mode. Skipping costs completion nothing, because a
+	 * bridge is a generated class under `hxscript.wired` that scripts reach at runtime and no
+	 * host writes against, and it takes the request from seventeen seconds to under two.
+	 *
 	 * @param libs The active libraries.
 	 * @return Expressions referencing each generated bridge, for the manifest to hold.
 	 */
 	public static function generate(libs:Array<Library>):Array<Expr> {
 		var refs:Array<Expr> = [];
 
-		if (Context.defined('hxscript_no_bridges'))
+		if (Context.defined('hxscript_no_bridges') || Context.defined('display') || Context.defined('display_details'))
 			return refs;
 
 		var pos:Position = Context.currentPos();

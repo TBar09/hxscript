@@ -801,6 +801,11 @@ load failure as "recompile from source", which is cheap and always correct.
 - **Build macros hold type paths as strings**, which the compiler cannot check. Rename a bridged base
   or move a package and nothing fails at compile time. It fails when a script asks.
 - **Abstracts declared in scripts need no setup.** Only native ones need the build macro.
+- **Completion is not affected by the setup, and used to be.** No bridge is generated for a display
+  request. A bridge re-emits its base's constructor, which a display compile has not typed, so the
+  request died with `Invalid expression` and the editor showed a hover loading and then nothing.
+  Nothing has to be added to a completion hxml for this, and `-D hxscript_no_bridges` is no longer
+  the workaround it briefly was.
 
 ### Dead code elimination
 
