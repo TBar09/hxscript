@@ -1498,6 +1498,21 @@ class Interp {
 	}
 
 	/**
+	 * A copy of the current frame's locals, for a caller outside this module.
+	 *
+	 * Deliberately not `inline`, and deliberately taking no argument. A generated bridge calls it
+	 * from its own module, and inlining `duplicate` across that boundary hands the call site
+	 * whatever the compiler has already reduced `Map<String, Variable>` to. Warm off a
+	 * compilation server that is `haxe.ds.StringMap`, which no longer unifies with the optional
+	 * `Map` parameter, so the bridge failed to type on every build after the first.
+	 *
+	 * @return A ready-to-use copy of the current scope.
+	 */
+	public function duplicateLocals():Map<String, Variable> {
+		return duplicate(locals);
+	}
+
+	/**
 	 * Unwinds variable declarations made since a scope began, restoring shadowed bindings.
 	 *
 	 * @param old The `declared` length to roll back to (the scope's starting mark).

@@ -592,6 +592,20 @@ class Scripted {
 							case TBinop(OpAssign | OpAssignOp(_), {expr: TLocal(v)}, _) if (v.name == 'this'):
 								reason = 'it inlines an abstract\'s constructor, which assigns to `this`';
 
+							/**
+							 * The same loss in the form it takes once the compiler has reduced it further: a
+							 * write whose value no longer carries the abstract its field is declared as.
+							 */
+							case TBinop(OpAssign | OpAssignOp(_), {expr: TField(_, FInstance(_, _, cf))},
+								{expr: TCast(_, _)}):
+								switch (cf.get().type) {
+									case TAbstract(declared, _) if (!declared.get().meta.has(':coreType')
+										&& declared.get().name != 'Null'):
+										reason = 'it writes ${cf.get().name} through a cast the compiler put there '
+											+ 'in place of ${declared.toString()}, which no source may write';
+									default:
+								}
+
 							default:
 						}
 
@@ -1007,8 +1021,7 @@ class Scripted {
 						if (field.name == 'toString') {
 							hasToString = true;
 						} else {
-							var args:Array<{t:Type, opt:Bool, name:String}> = null, ret = null,
-								expr = Context.getTypedExpr(field.expr());
+							var args:Array<{t:Type, opt:Bool, name:String}> = null, ret = null, expr:Expr;
 							switch (field.type) {
 								default:
 								case TFun(aargs, rret):
@@ -1022,13 +1035,6 @@ class Scripted {
 											ret = rret;
 									}
 							}
-							switch (expr.expr) {
-								default:
-								case EFunction(_, fun):
-									expr = fun.expr;
-							}
-							expr = {pos: pos, expr: EMeta({pos: pos, name: ':privateAccess'}, expr)};
-
 							var argsArray:Array<Expr> = new Array<Expr>();
 							for (arg in args)
 								argsArray.push(macro cast $i{arg.name});
@@ -1301,7 +1307,7 @@ class Scripted {
 				if (instanceFields == null)
 					return;
 
-				var superLocals:Map<String, hxscript.runtime.Variable> = __interp.duplicate(__interp.locals);
+				var superLocals:Map<String, hxscript.runtime.Variable> = __interp.duplicateLocals();
 
 				for (field in instanceFields) {
 					if (hxscript.macro.Scripted.ignoreFields.contains(field))
@@ -1369,7 +1375,7 @@ class Scripted {
 					}
 				}
 
-				var superLocals:Map<String, hxscript.runtime.Variable> = __interp.duplicate(__interp.locals);
+				var superLocals:Map<String, hxscript.runtime.Variable> = __interp.duplicateLocals();
 				for (loc => v in t.__vars)
 					superLocals.set(loc, v);
 
