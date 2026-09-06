@@ -2,7 +2,43 @@
 
 ## Unreleased
 
+### Changed
+
+- **The per-library packages moved under `hxscript.lib`.** `hxscript.flixel`, `hxscript.heaps`,
+  `hxscript.openfl` and `hxscript.stdlib` are now `hxscript.lib.flixel`, `hxscript.lib.heaps`,
+  `hxscript.lib.openfl` and `hxscript.lib.stdlib`. Each of them is there to patch up a library
+  hxScript does not own, and sitting beside `runtime`, `syntax` and `types` they read as though
+  hxScript had a `flixel` of its own. The target backends stay where they are.
+
+  **This renames types a script can reach.** A script that writes
+  `import hxscript.openfl.SoundTools` has to say `hxscript.lib.openfl.SoundTools` instead. Nothing
+  else moved and no member changed.
+
 ### Fixed
+
+- **A static a script declared had two homes on the HashLink backend, and a write from a class
+  extending a host type went to the one nobody read.** `Flat.pending = at` inside a
+  `class Board extends h2d.Object` stored a value that the next module to read `Flat.pending` could
+  not see, while the same two lines in a class extending nothing were fine. Reading was never
+  wrong, which made it look like a value being lost rather than one never stored.
+
+  A compiled class's statics move onto the class its batch laid out, and only code of that batch
+  was sent there; everything else resolved the name to the scripted class and used its own map. The
+  name now answers with the class the batch laid out, and the write side of the emitter gained the
+  case for a static of another module that the read side has had since reads were fixed.
+
+  The sandbox's tetris reported it as a screen that never changes, since `Nav.go` set what to show
+  and the game object looked for it somewhere else. Nothing shipped covered the shape: the first
+  person shooter template declares no statics at all, and the conformance project only wrote its
+  shared static from a plain class. It does both now.
+
+- **Every build after the first through a compilation server failed.** A plain `haxe build.hxml`
+  always worked, which is why this read as an editor problem: an editor builds through the shared
+  display server, so it always took the warm path and a terminal build never could.
+
+  Warm off a server the compiler hands a macro a typed expression it has already reduced further,
+  with the abstracts gone out of it. Three things here read those expressions back and none
+  survived the reduction, so a bridge either failed to type or took the compiler with it.
 
 - **Adding the library to the hxml an editor uses for completion broke completion.** A hover showed
   loading and then nothing, and every other request went the same way, which reads as the library

@@ -333,8 +333,8 @@ against code that had not changed.
 
 This is the one step that cannot be data, because it is a closure that calls the library's own types.
 So the closures live with the library they emulate, one package each:
-[`hxscript.stdlib.Shims`](../src/hxscript/stdlib/Shims.hx) for the standard library,
-[`hxscript.flixel.Shims`](../src/hxscript/flixel/Shims.hx) for the `playMusic` above,
+[`hxscript.lib.stdlib.Shims`](../src/hxscript/lib/stdlib/Shims.hx) for the standard library,
+[`hxscript.lib.flixel.Shims`](../src/hxscript/lib/flixel/Shims.hx) for the `playMusic` above,
 [`hxscript.python.Shims`](../src/hxscript/python/Shims.hx) for the builtins that target implements as
 statics, and [`hxscript.setup.Shims`](../src/hxscript/setup/Shims.hx) is the registrar that calls
 each behind its own `#if`. A host adds its own to `Config.callShims` directly, per §5.

@@ -1,4 +1,4 @@
-package hxscript.stdlib;
+package hxscript.lib.stdlib;
 
 import haxe.io.Bytes;
 

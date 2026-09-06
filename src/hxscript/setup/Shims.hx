@@ -12,14 +12,14 @@ class Shims {
 		if (registered.length > 0)
 			return;
 
-		hxscript.stdlib.Shims.register();
+		hxscript.lib.stdlib.Shims.register();
 
 		#if python
 		hxscript.python.Shims.register();
 		#end
 
 		#if flixel
-		hxscript.flixel.Shims.register();
+		hxscript.lib.flixel.Shims.register();
 		#end
 	}
 

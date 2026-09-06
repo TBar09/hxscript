@@ -1,4 +1,4 @@
-package hxscript.openfl;
+package hxscript.lib.openfl;
 
 #if (lime && openfl)
 import haxe.io.Bytes;

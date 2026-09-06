@@ -18,7 +18,7 @@ class Presets {
 		roots: [],
 		ignore: [],
 		types: [
-			'hxscript.stdlib.BytesTools',
+			'hxscript.lib.stdlib.BytesTools',
 			'haxe.io.Bytes',
 			'haxe.io.BytesOutput',
 			'haxe.io.BytesInput'
@@ -74,7 +74,7 @@ class Presets {
 		 * sub-package. Without this line nothing put it in the build, so `import openfl.Lib;` in a
 		 * script found no type to bind.
 		 */
-		types: ['hxscript.openfl.SoundTools', 'openfl.Lib'],
+		types: ['hxscript.lib.openfl.SoundTools', 'openfl.Lib'],
 		bases: ['openfl.display.Sprite'],
 		abstractPackages: [],
 		abstracts: [
@@ -93,7 +93,7 @@ class Presets {
 		title: 'flixel',
 		roots: ['flixel'],
 		ignore: ['flixel.system.macros', 'flixel.system.debug'],
-		types: ['hxscript.flixel.TriangleTools'],
+		types: ['hxscript.lib.flixel.TriangleTools'],
 		bases: [
 			'flixel.FlxBasic',
 			'flixel.FlxObject',
@@ -187,7 +187,7 @@ class Presets {
 			'hxd.res.DefaultFont',
 			'hxd.snd.Channel',
 			'hxd.snd.effect.Pitch',
-			'hxscript.heaps.SoundTools',
+			'hxscript.lib.heaps.SoundTools',
 			/** Named by `h2d.Tile`, and by `h2d.Object.drawTo`. */
 			'h3d.mat.Texture'
 		],

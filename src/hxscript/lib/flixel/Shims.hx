@@ -1,4 +1,4 @@
-package hxscript.flixel;
+package hxscript.lib.flixel;
 
 #if flixel
 import flixel.FlxG;

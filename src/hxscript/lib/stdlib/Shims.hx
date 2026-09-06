@@ -1,4 +1,4 @@
-package hxscript.stdlib;
+package hxscript.lib.stdlib;
 
 /**
  * Standard-library members that have no runtime form, re-registered as real closures.
