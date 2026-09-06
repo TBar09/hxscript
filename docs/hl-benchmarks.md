@@ -101,25 +101,25 @@ what the language costs once Haxe has seen the code.
 
 | column | op, us/iter | x | call, us/iter | x | getting ready |
 | --- | --- | --- | --- | --- | --- |
-| `hashlink/c` | 0.0417 | 1.0x | 0.0000 | 1.0x | 0 ms |
-| `hashlink/vm` | 0.0403 | 1.0x | 0.0027 | vs ~0 | 0 ms |
-| `hxscript hl/c` | 0.2713 | 6.5x | 0.0853 | vs ~0 | 7.612 ms |
-| `hxscript interp` | 1.8140 | 43.5x | 2.7352 | vs ~0 | 2.892 ms |
+| `hashlink/c` | 0.0402 | 1.0x | 0.0000 | 1.0x | 0 ms |
+| `hashlink/vm` | 0.0386 | 1.0x | 0.0026 | vs ~0 | 0 ms |
+| `hxscript hl/c` | 0.2581 | 6.4x | 0.0759 | vs ~0 | 7.072 ms |
+| `hxscript interp` | 1.4624 | 36.4x | 2.3837 | vs ~0 | 2.857 ms |
 
 ```mermaid
 xychart-beta
     title "Ordinary operations, microseconds per iteration (lower is better)"
     x-axis ["hashlink/vm", "hashlink/c", "hxscript hl/c", "hxscript interp"]
-    y-axis "us/iter" 0 --> 2.0861
-    bar [0.040, 0.042, 0.271, 1.814]
+    y-axis "us/iter" 0 --> 1.6817
+    bar [0.039, 0.040, 0.258, 1.462]
 ```
 
 ```mermaid
 xychart-beta
     title "Calls, microseconds per iteration (lower is better)"
     x-axis ["hashlink/c", "hashlink/vm", "hxscript hl/c", "hxscript interp"]
-    y-axis "us/iter" 0 --> 3.1455
-    bar [0.000, 0.003, 0.085, 2.735]
+    y-axis "us/iter" 0 --> 2.7413
+    bar [0.000, 0.003, 0.076, 2.384]
 ```
 
 27 of those cases are marked `folded` below, meaning Haxe proved the answer and emitted no
@@ -145,45 +145,45 @@ was nothing to compile and nothing ran: `noCall`. Those are a property of the co
 
 | case | kind | `hashlink/c` | `hashlink/vm` | `hxscript hl/c` | `hxscript interp` |
 | --- | --- | --- | --- | --- | --- |
-| `noCall` | op | refused | refused | 0.0022 | 0.9519 |
-| `loopPlain` | op | 0.0000 (folded) | 0.0017 | 0.0023 | 0.7110 |
-| `postIncr` | op | 0.0000 (folded) | 0.0017 | 0.0019 | 0.6476 |
-| `arith` | op | 0.0000 (folded) | 0.0021 | 0.0027 | 1.2279 |
-| `locals` | op | 0.0000 (folded) | 0.0019 | 0.0025 | 1.6816 |
-| `blocks` | op | 0.0000 (folded) | 0.0019 | 0.0024 | 1.3323 |
-| `not` | op | 0.0000 (folded) | 0.0024 | 0.0023 | 1.0035 |
-| `neg` | op | 0.0000 (folded) | 0.0024 | 0.0026 | 1.0244 |
-| `index` | op | 0.0000 (folded) | 0.0010 | 0.2591 | 1.2917 |
-| `indexSet` | op | 0.0000 (folded) | 0.0010 | 0.2118 | 0.9165 |
-| `field` | op | 0.0000 (folded) | 0.0024 | 0.0024 | 3.1579 |
-| `fieldSet` | op | 0.0000 (folded) | 0.0021 | 0.0024 | 2.1712 |
-| `method` | op | 0.0000 (folded) | 0.0027 | 0.0039 | 4.1184 |
-| `ternary` | op | 0.0000 (folded) | 0.0049 | 0.0050 | 1.3270 |
-| `switch` | op | 0.0000 (folded) | 0.0049 | 0.2347 | 2.1394 |
-| `strConcat` | op | 0.3043 | 0.2867 | 0.6799 | 1.8241 |
-| `strInterp` | op | 0.3053 | 0.2807 | 1.2694 | 2.5911 |
-| `arrayDecl` | op | 0.0000 (folded) | 0.0020 | 0.5850 | 3.2428 |
-| `mapLiteral` | op | 0.4307 | 0.3624 | 0.7833 | 3.8398 |
-| `forRange` | op | 0.0000 (folded) | 0.0008 | 0.0008 | 0.5490 |
-| `forArray` | op | 0.0001 (folded) | 0.0021 | 1.4035 | 0.4760 |
-| `anonField` | op | 0.0777 | 0.0748 | 0.7690 | 1.9456 |
-| `hostMethod` | op | 0.0346 | 0.0489 | 0.1493 | 2.0213 |
-| `hostStatic` | op | 0.0012 | 0.0104 | 0.8489 | 4.0404 |
-| `arrayPush` | op | 0.0083 | 0.0086 | 0.1676 | 1.8530 |
-| `boolLogic` | op | 0.0000 (folded) | 0.0024 | 0.0024 | 1.2664 |
-| `modArith` | op | 0.0000 (folded) | 0.0051 | 0.0051 | 1.4735 |
-| `stringSwitch` | op | 0.0064 | 0.0075 | 0.1198 | 1.9051 |
-| `nullCoal` | op | 0.0000 (folded) | 0.0018 | 0.0764 | 1.0131 |
-| `call0` | call | 0.0000 (folded) | 0.0022 | 0.0023 | 1.8482 |
-| `call1` | call | 0.0000 (folded) | 0.0024 | 0.0026 | 2.4299 |
-| `call3` | call | 0.0000 (folded) | 0.0039 | 0.0046 | 3.8001 |
-| `callCap20` | call | 0.0000 (folded) | 0.0024 | 0.0026 | 2.4038 |
-| `closureCall` | call | 0.0000 (folded) | 0.0024 | 0.4954 | 2.4207 |
-| `classCall` | call | 0.0000 (folded) | 0.0029 | 0.0041 | 3.5087 |
-| `loopCont` | unwind | 0.0000 (folded) | 0.0019 | 0.0022 | 0.8647 |
-| `tryCatch` | unwind | 2.1787 | 1.3623 | 0.4810 | 4.4704 |
-| `classNew` | compound | 0.0542 | 0.0510 | 0.0580 | 33.5585 |
-| `arrayCompr` | compound | 0.0113 | 0.0124 | 0.0785 | 0.4661 |
+| `noCall` | op | refused | refused | 0.0022 | 0.6071 |
+| `loopPlain` | op | 0.0000 (folded) | 0.0016 | 0.0022 | 0.5207 |
+| `postIncr` | op | 0.0000 (folded) | 0.0016 | 0.0018 | 0.4735 |
+| `arith` | op | 0.0000 (folded) | 0.0020 | 0.0027 | 0.8843 |
+| `locals` | op | 0.0000 (folded) | 0.0018 | 0.0024 | 1.3595 |
+| `blocks` | op | 0.0000 (folded) | 0.0018 | 0.0022 | 1.0134 |
+| `not` | op | 0.0000 (folded) | 0.0023 | 0.0022 | 0.6557 |
+| `neg` | op | 0.0000 (folded) | 0.0023 | 0.0025 | 0.6984 |
+| `index` | op | 0.0000 (folded) | 0.0009 | 0.2574 | 0.9139 |
+| `indexSet` | op | 0.0000 (folded) | 0.0009 | 0.2038 | 0.7009 |
+| `field` | op | 0.0000 (folded) | 0.0023 | 0.0024 | 2.5516 |
+| `fieldSet` | op | 0.0000 (folded) | 0.0020 | 0.0023 | 1.7758 |
+| `method` | op | 0.0000 (folded) | 0.0027 | 0.0036 | 3.5353 |
+| `ternary` | op | 0.0000 (folded) | 0.0048 | 0.0048 | 0.9650 |
+| `switch` | op | 0.0000 (folded) | 0.0048 | 0.2212 | 1.6463 |
+| `strConcat` | op | 0.2947 | 0.2756 | 0.6362 | 1.6083 |
+| `strInterp` | op | 0.2942 | 0.2719 | 1.1951 | 2.2784 |
+| `arrayDecl` | op | 0.0000 (folded) | 0.0019 | 0.5865 | 2.7342 |
+| `mapLiteral` | op | 0.4125 | 0.3413 | 0.7253 | 3.5477 |
+| `forRange` | op | 0.0000 (folded) | 0.0007 | 0.0007 | 0.3995 |
+| `forArray` | op | 0.0001 (folded) | 0.0020 | 1.3361 | 0.3145 |
+| `anonField` | op | 0.0761 | 0.0726 | 0.7229 | 1.5319 |
+| `hostMethod` | op | 0.0326 | 0.0507 | 0.1408 | 1.6501 |
+| `hostStatic` | op | 0.0012 | 0.0100 | 0.8075 | 3.3903 |
+| `arrayPush` | op | 0.0076 | 0.0082 | 0.1618 | 1.6042 |
+| `boolLogic` | op | 0.0000 (folded) | 0.0021 | 0.0023 | 0.8978 |
+| `modArith` | op | 0.0000 (folded) | 0.0050 | 0.0049 | 1.0815 |
+| `stringSwitch` | op | 0.0063 | 0.0063 | 0.1225 | 1.5345 |
+| `nullCoal` | op | 0.0000 (folded) | 0.0017 | 0.0715 | 0.6798 |
+| `call0` | call | 0.0000 (folded) | 0.0021 | 0.0022 | 1.5586 |
+| `call1` | call | 0.0000 (folded) | 0.0023 | 0.0026 | 2.0605 |
+| `call3` | call | 0.0000 (folded) | 0.0038 | 0.0045 | 3.5600 |
+| `callCap20` | call | 0.0000 (folded) | 0.0023 | 0.0026 | 2.0654 |
+| `closureCall` | call | 0.0000 (folded) | 0.0023 | 0.4397 | 2.1011 |
+| `classCall` | call | 0.0000 (folded) | 0.0028 | 0.0040 | 2.9567 |
+| `loopCont` | unwind | 0.0000 (folded) | 0.0019 | 0.0021 | 0.6657 |
+| `tryCatch` | unwind | 2.1261 | 1.3218 | 0.4576 | 3.9459 |
+| `classNew` | compound | 0.0527 | 0.0484 | 0.0535 | 17.2930 |
+| `arrayCompr` | compound | 0.0103 | 0.0117 | 0.0774 | 0.4504 |
 
 </details>
 

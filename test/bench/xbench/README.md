@@ -1,7 +1,7 @@
 # Cross-library benchmark
 
 Runs the same scripts through six hscript-family libraries and reports what each one costs. The
-results and what they mean are in [`../../docs/benchmarks.md`](../../docs/benchmarks.md); this file
+results and what they mean are in [`../../../docs/benchmarks.md`](../../../docs/benchmarks.md); this file
 is only about running it.
 
 ## Layout
@@ -28,13 +28,15 @@ mkdir xbench-libs && cd xbench-libs
 git clone https://github.com/inky03/hscript-insanity insanity
 git clone https://github.com/HaxeFoundation/hscript
 git clone https://github.com/CodenameCrew/hscript-improved improved
-git clone https://github.com/pisayesiwsi/hscript-iris iris
+# iris is measured on dev; master removes string interpolation and breaks postIncr
+git clone https://github.com/pisayesiwsi/hscript-iris iris && (cd iris && git checkout dev)
 git clone https://github.com/Kriptel/RuleScript rulescript
+git clone https://github.com/ThomasDarkson/SScript sscript
 # RuleScript needs an hscript predating Interp.makeKeyValueIterator
 git clone https://github.com/HaxeFoundation/hscript hscript-rs && (cd hscript-rs && git checkout 609c489)
 cd ..
 
-LIBS=$PWD/xbench-libs sh test/xbench/run.sh
+LIBS=$PWD/xbench-libs sh test/bench/xbench/run.sh
 ```
 
 Anything missing from `LIBS` is skipped, so you can compare against a subset.

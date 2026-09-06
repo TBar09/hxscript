@@ -27,7 +27,8 @@ class XBench {
 		return xs[Std.int(xs.length / 2)];
 	}
 
-	public static function run(lib:String, prepare:String->Dynamic, exec:Dynamic->Dynamic):Void {
+	public static function run(lib:String, prepare:String->Dynamic, exec:Dynamic->Dynamic,
+			?front:String->Dynamic):Void {
 		// One case per process invocation: two of the libraries under test segfault outright on a
 		// case, which would otherwise take the whole run down and lose every case after it.
 		var only:String = (Sys.args().length > 1) ? Sys.args()[1] : null;
@@ -38,6 +39,15 @@ class XBench {
 
 		if (only == "__parse") {
 			parseBench(lib, prepare);
+			return;
+		}
+
+		// `__front <case> <n>`: the case moves along one argument, because `__front` occupies the slot
+		// the case name usually has. One process per case here too, for the reason the main loop has it.
+		if (only == "__front") {
+			var which:String = (Sys.args().length > 2) ? Sys.args()[2] : null;
+			var scale:Int = (Sys.args().length > 3) ? Std.parseInt(Sys.args()[3]) : 1000;
+			frontBench(lib, front, which, scale);
 			return;
 		}
 
@@ -91,6 +101,58 @@ class XBench {
 			var got:String = Std.string(value);
 			var status:String = (got == c.x) ? "ok" : "wrong";
 			line(lib, c, status, median(times) * 1000, got);
+		}
+	}
+
+	/**
+	 * The library's own front door: construct, parse and run, every time, with nothing hoisted.
+	 *
+	 * `run` times execution alone, because parse cost differs so much between these libraries that
+	 * leaving it in would drown what the interpreters do. This measures the opposite thing on purpose:
+	 * what one fire-and-forget call costs a host that does not keep the parsed program.
+	 *
+	 * A library whose front door hands nothing back is timed anyway and reports `-` for its value.
+	 * SScript's `execute()` returns `Void`, and running the program is still the work being measured.
+	 *
+	 * @param lib The library's name.
+	 * @param front Its one-call entry point, or null when the runner offers none.
+	 * @param only The single case to run, or null for all of them.
+	 * @param iters The scale baked into each case.
+	 */
+	static function frontBench(lib:String, front:String->Dynamic, only:String, iters:Int):Void {
+		if (front == null)
+			return;
+
+		for (c in BenchCases.all(iters)) {
+			if (only != null && c.n != only)
+				continue;
+
+			var times:Array<Float> = [];
+			var value:Dynamic = null;
+			var failed:String = null;
+
+			for (r in 0...REPS) {
+				try {
+					var t0:Float = haxe.Timer.stamp();
+					value = front(c.s);
+					times.push(haxe.Timer.stamp() - t0);
+				} catch (e:Dynamic) {
+					failed = shorten(Std.string(e));
+					break;
+				}
+			}
+
+			if (failed != null) {
+				Sys.println("F|" + lib + "|" + c.n + "|" + c.t + "|" + c.i + "|unsupported|-|" + failed);
+				continue;
+			}
+
+			var got:String = (value == null) ? "-" : Std.string(value);
+			var status:String = (got == "-" || got == c.x) ? "ok" : "wrong";
+			var ms:Float = median(times) * 1000;
+
+			Sys.println("F|" + lib + "|" + c.n + "|" + c.t + "|" + c.i + "|" + status + "|"
+				+ Std.string(Std.int(ms * 1000) / 1000) + "|" + got);
 		}
 	}
 

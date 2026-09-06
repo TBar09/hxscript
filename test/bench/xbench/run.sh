@@ -1,9 +1,9 @@
 #!/bin/sh
 # Builds and runs the cross-library benchmark, one process per case.
 #
-#   LIBS=/path/to/checkouts sh test/xbench/run.sh
+#   LIBS=/path/to/checkouts sh test/bench/xbench/run.sh
 #
-# `LIBS` must contain checkouts named: insanity, hscript, improved, iris, rulescript,
+# `LIBS` must contain checkouts named: insanity, hscript, improved, iris, rulescript, sscript,
 # hscript-rs (an hscript old enough for RuleScript; see docs/benchmarks.md). Anything missing is
 # skipped rather than failing the run.
 #
@@ -31,20 +31,41 @@ DCE=${DCE:-no}
 # answered every case the corpus held then, and reported the ten added since as `crash`. Those had
 # not crashed, and that binary had never heard of them. A stale column is worse than a missing one,
 # because the table reports it as collected.
-build() { # name, classpath, main, [extra hxml]
-  rm -rf "$BIN/$1"
-  [ -d "$2" ] || { echo "skip $1 (no $2)" >&2; return; }
-  haxe -cp "$HERE" -cp "$2" ${4:+"$4"} -dce "$DCE" -main "$3" -cpp "$BIN/$1" >"$BIN/$1.build.log" 2>&1 \
-    || { echo "skip $1 (build failed, see bin_xbench/$1.build.log)" >&2; return; }
-  echo "$1"
+# Extra hxml files are passed through, however many. A library whose own extraParams needs more than
+# one file to reproduce, which hscript-improved with positions on does, cannot use a single slot.
+build() { # name, classpath, main, [extra hxml...]
+  name=$1; classpath=$2; entry=$3
+  shift 3
+  rm -rf "$BIN/$name"
+  [ -d "$classpath" ] || { echo "skip $name (no $classpath)" >&2; return; }
+  haxe -cp "$HERE" -cp "$classpath" "$@" -dce "$DCE" -main "$entry" -cpp "$BIN/$name" >"$BIN/$name.build.log" 2>&1 \
+    || { echo "skip $name (build failed, see bin_xbench/$name.build.log)" >&2; return; }
+  echo "$name"
+}
+
+# A library that ships its own extraParams.hxml gets it passed, since `-cp` does not read one and
+# `-lib` is not what this suite uses. The checkout's own file rather than a copy of it: insanity
+# moved its macro from `insanity.backend.macro` to `insanity.macro` between two commits measured
+# here, and a copy would have gone on naming the old path and quietly setting nothing up.
+#
+# RuleScript is the exception and keeps its hand-written `rulescript-params.hxml`, because its own
+# file opens with `-lib hscript`, which would pull an hscript it cannot build against.
+build_own() { # name, classpath, main, [extra hxml...]
+  own=$2/extraParams.hxml
+  if [ -f "$own" ]; then
+    name=$1; classpath=$2; entry=$3; shift 3
+    build "$name" "$classpath" "$entry" "$own" "$@"
+  else
+    build "$@"
+  fi
 }
 
 echo "building..." >&2
 build hxscript "$ROOT/src" RunHxScript >/dev/null
 # Its own runner: hscript-insanity is `package insanity`, so one runner cannot import both.
-build insanity "$LIBS/insanity" RunInsanity >/dev/null
+build_own insanity "$LIBS/insanity" RunInsanity >/dev/null
 build hscript "$LIBS/hscript" RunHscript >/dev/null
-build improved "$LIBS/improved" RunHscript >/dev/null
+build improved "$LIBS/improved" RunHscript "$HERE/improved-params.hxml" >/dev/null
 build iris "$LIBS/iris" RunIris >/dev/null
 # Its classpath is the `src` inside the checkout rather than the checkout itself, and it declares
 # its own `hscript` package, so it could not share a binary with hscript or hscript-improved even
@@ -54,7 +75,7 @@ build sscript    "$LIBS/sscript/src" RunSScript >/dev/null
 # The same libraries again with position tracking on, which is what hxScript always does. Without
 # it they record no source positions at all, so the plain rows are not a like-for-like comparison.
 build hscript-pos "$LIBS/hscript" RunHscript "$HERE/hscript-pos.hxml" >/dev/null
-build improved-pos "$LIBS/improved" RunHscript "$HERE/hscript-pos.hxml" >/dev/null
+build improved-pos "$LIBS/improved" RunHscript "$HERE/improved-params.hxml" "$HERE/hscript-pos.hxml" >/dev/null
 build iris-pos "$LIBS/iris" RunIris "$HERE/hscript-pos.hxml" >/dev/null
 # RuleScript needs its own macro params on top, and like every other hscript-derived library it is
 # built BOTH ways. Building it only without positions dropped it out of the like-for-like comparison
@@ -106,6 +127,32 @@ for entry in "hxscript:$BIN/hxscript/RunHxScript.exe" \
     done
     echo "$lib @ $n done" >&2
   done
+done
+
+# The front-door pass. The same corpus again, but through each library's own one-call entry point,
+# so its parsing and setup sit inside the timing instead of being hoisted out of it. The
+# position-tracking builds, since that is the shape hxScript is always in and the shape the
+# comparison above is built from.
+#
+# A far lower scale, because a call that reparses on every use is not something a host runs a
+# hundred thousand times; at 100,000 the parse this is meant to expose would round away.
+FRONT=${FRONT:-1000}
+
+for entry in "hxscript:$BIN/hxscript/RunHxScript.exe" \
+             "insanity:$BIN/insanity/RunInsanity.exe" \
+             "sscript:$BIN/sscript/RunSScript.exe" \
+             "hscript-pos:$BIN/hscript-pos/RunHscript.exe" \
+             "hscript-improved-pos:$BIN/improved-pos/RunHscript.exe" \
+             "hscript-iris-pos:$BIN/iris-pos/RunIris.exe" \
+             "rulescript-pos:$BIN/rulescript-pos/RunRuleScript.exe"; do
+  lib=${entry%%:*}
+  exe=${entry#*:}
+  [ -x "$exe" ] || continue
+  for c in $CASES; do
+    line=$(timeout 300 "$exe" "$lib" __front "$c" "$FRONT" 2>/dev/null | grep -E '^F\|') || true
+    echo "${line:-F|$lib|$c|?|$FRONT|unsupported|-|process died}" >> "$OUT"
+  done
+  echo "$lib front @ $FRONT done" >&2
 done
 
 python "$HERE/collate.py" "$OUT"

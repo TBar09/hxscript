@@ -1,0 +1,11 @@
+# hscript-improved's own `extraParams.hxml`, passed by hand.
+#
+# `-cp` does not read a library's extraParams; only `-lib` does. Without these the library builds,
+# which is why this went unnoticed, but it builds without `using` handling and without class
+# extension: two of its features, absent from the thing being measured.
+#
+# Its `keep('IntIterator')` is left out on purpose. It exists to survive dead code elimination, and
+# this suite runs at `-dce no`, which is the stronger form of the same thing.
+
+--macro hscript.macros.UsingHandler.init()
+--macro hscript.macros.ClassExtendMacro.init()

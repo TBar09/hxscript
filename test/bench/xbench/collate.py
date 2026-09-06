@@ -42,6 +42,9 @@ NOPOS = {"hscript", "hscript-improved", "hscript-iris", "rulescript"}
 # case -> scale -> lib -> (status, ms, value)
 rows = collections.defaultdict(lambda: collections.defaultdict(dict))
 parse = {}
+# case -> lib -> (status, ms, value), from the front-door pass
+front = collections.defaultdict(dict)
+front_scale = [0]
 tier = {}
 order = []
 scales = []
@@ -59,6 +62,11 @@ for raw in open(sys.argv[1]):
         if n and n not in scales:
             scales.append(n)
         rows[case][n][lib] = (status, ms, value)
+    elif raw.startswith("F|"):
+        _, lib, case, t, iters, status, ms, value = raw.split("|", 7)
+        front[case][lib] = (status, ms, value)
+        if iters.isdigit():
+            front_scale[0] = int(iters)
     elif raw.startswith("P|"):
         parts = raw.split("|")
         parse[parts[1]] = parts[3] if len(parts) > 3 else "crash"
@@ -301,3 +309,45 @@ if any(l in seen for l in NOPOS):
             for a, b in pairs) + " |")
         print("| parse with, ms | " + " | ".join(str(parse.get(a, "n/a")) for a, _ in pairs) + " |")
         print("| parse without, ms | " + " | ".join(str(parse.get(b, "n/a")) for _, b in pairs) + " |")
+
+
+# --- the front-door table -------------------------------------------------------------------------
+#
+# Separate on purpose. The tables above hoist parsing out so the interpreters can be compared; this
+# one hoists nothing, so it says what a single fire-and-forget call costs. Nothing here is shared
+# with the runners above: each library is driven through its own entry point, repeated work included.
+if front:
+    FN = front_scale[0]
+    fl = [l for l in PREFERRED if any(l in front[c] for c in front)]
+    fshared = [c for c in order if c in front and all(front[c].get(l, ("x",))[0] == "ok" for l in fl)]
+
+    if fl and fshared:
+        print("")
+        print("### The same corpus through each library's own front door, at {:,}".format(FN))
+        print("")
+        print("Every table above hoists parsing out of the timing so the interpreters can be compared.")
+        print("This one hoists nothing: each library is driven through its own one-call entry point, so")
+        print("construction, parsing and any work it repeats internally are all inside the number.")
+        print("")
+        print("Totals over the {} cases every library completed this way, at a much lower scale than".format(len(fshared)))
+        print("the tables above, because a call that reparses every time is not one a host makes a")
+        print("hundred thousand times.")
+        print("")
+
+        tot = {l: sum(float(front[c][l][1]) for c in fshared) for l in fl}
+        base = tot.get("hxscript") or min(tot.values())
+
+        print("| | " + " | ".join(LABEL[l] for l in fl) + " |")
+        print("| --- |" + " --- |" * len(fl))
+        print("| corpus through the front door, ms, lower is faster | " + " | ".join("%.1f" % tot[l] for l in fl) + " |")
+        print("| relative to hxScript, higher is slower | " + " | ".join(("%.2fx" % (tot[l] / base)) if base else "n/a" for l in fl) + " |")
+        print("| parse alone, ms, from the table above | " + " | ".join(str(parse.get(l, "n/a")) for l in fl) + " |")
+
+        chart("Whole corpus through the front door (lower is better)", "ms",
+              [(LABEL[l].replace("**", ""), tot[l]) for l in fl])
+
+        missed = [c for c in order if c in front and c not in fshared]
+        if missed:
+            print("")
+            print("Left out of the totals, since not every library completed them this way: `"
+                  + "`, `".join(missed) + "`.")

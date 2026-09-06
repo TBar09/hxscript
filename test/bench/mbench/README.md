@@ -1,16 +1,16 @@
 # Execution-mode benchmark
 
 The same corpus run three ways: interpreted, compiled to cppia, and cppia with the JIT enabled.
-Writes the results section of [`docs/mode-benchmarks.md`](../../docs/mode-benchmarks.md).
-What they mean for someone choosing a mode is [`docs/modes.md`](../../docs/modes.md),
+Writes the results section of [`docs/mode-benchmarks.md`](../../../docs/mode-benchmarks.md).
+What they mean for someone choosing a mode is [`docs/modes.md`](../../../docs/modes.md),
 which is written by hand.
 
 ```sh
-sh test/mbench/run.sh
+sh test/bench/mbench/run.sh
 ```
 
 ```sh
-SCALES="25000 100000 500000" sh test/mbench/run.sh
+SCALES="25000 100000 500000" sh test/bench/mbench/run.sh
 ```
 
 Scales must be multiples of 1000, which is the array length `forArray` walks.

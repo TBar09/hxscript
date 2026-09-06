@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds and runs the execution-mode benchmark, one process per case.
 #
-#   sh test/mbench/run.sh
+#   sh test/bench/mbench/run.sh
 #
 # Three modes out of one binary: interpreted, compiled to cppia, and cppia with the JIT on. The JIT
 # is a process-wide switch, so it cannot share a process with the mode it is measured against, and

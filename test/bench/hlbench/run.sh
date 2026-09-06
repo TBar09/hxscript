@@ -35,7 +35,16 @@ CP="-cp $ROOT/src -cp $ROOT/test/bench/mbench -cp $HERE -cp $GEN"
 mkdir -p "$GEN"
 
 echo "generating the native corpus at n=$SCALE..." >&2
-HXS_GEN="$SCALE $GEN/NativeCases.hx" haxe -cp "$ROOT/test/bench/mbench" -cp "$HERE" -main GenNative --interp >&2
+# The generator is handed its output path through the environment, and that path has to be one the
+# Haxe process itself understands. Under Git Bash `$GEN` is a POSIX path like `/r/...`; MSYS rewrites
+# those into `R:\...` in command ARGUMENTS, which is why every `-cp` here works, but it does not
+# touch the environment. So the generator resolved `/r/...` against the current drive and wrote the
+# corpus to an `r` directory at the drive root, where the build could not see it, and the run died
+# with `Type not found : NativeCases` after reporting that it had written the file.
+GENPATH=$GEN
+command -v cygpath >/dev/null 2>&1 && GENPATH=$(cygpath -m "$GEN")
+
+HXS_GEN="$SCALE $GENPATH/NativeCases.hx" haxe -cp "$ROOT/test/bench/mbench" -cp "$HERE" -main GenNative --interp >&2
 
 # The VM build. Plain Haxe with no library in it: this column is the language on its own, and
 # linking the compiler into it would only invite the question of whether that changed the number.
