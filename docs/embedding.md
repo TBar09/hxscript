@@ -40,14 +40,15 @@ The build says so, once, in one block:
      | | | | >  < \__ \| (__ | |   | || |_) || |_
      |_| |_|/_/\_\|___/ \___||_|   |_|| .__/  \__|
                                       |_|
-     hxscript 2.0.4   hashlink   HashLink bytecode compiler
+     hxscript x.y.z   hashlink   HashLink bytecode compiler
      wired    heaps 2D, heaps 3D, host (host)
      reach    61 type(s), 5 abstract(s), 11 bridge(s)
      native   built export/hlc/Sandbox.exe
 ```
 
-The counts are one real build's and yours will differ; what to read them for is whether each is
-non-zero. The line that matters most is the first, which names the backend.
+The counts are one real build's and yours will differ, and the version is whichever you installed;
+what to read them for is whether each is non-zero. The line that matters most is the first, which
+names the backend.
 **A compiled backend is opt-in on both targets that have one**, and a build meaning to have one and
 not having it is a program running scripts at a fraction of the speed it was measured at, with
 nothing anywhere saying so. That line says which of the two you got.
