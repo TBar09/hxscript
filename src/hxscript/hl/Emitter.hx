@@ -1773,6 +1773,20 @@ class Emitter {
 					case EField({e: EIdent(cls)}, name, _) if (isStaticOf(cls, name)):
 						staticWrite(cls, name, value, e.pos);
 
+					/**
+					 * A static of a type the world holds, written where it lives.
+					 *
+					 * The read side has this and the write side did not, so `Nav.pending = null` fell through
+					 * to an ordinary field write whose receiver is the bare name `Nav`. Inside a class that
+					 * extends something the host compiled, `reachesHost()` answers yes before anything asks
+					 * whether that name is a type, so the receiver came back as a member of the instance,
+					 * which is null, and the write went nowhere. Reading the same static was never wrong,
+					 * which is what made it look like the value was being lost rather than never stored.
+					 */
+					case EField(_, _, _) if (hostName(target) != null):
+						var host:{owner:String, field:String} = hostName(target);
+						emitHostWrite(host.owner, host.field, value);
+
 					case EField(obj, name, _):
 						setField(obj, name, value, e.pos);
 
@@ -2979,6 +2993,39 @@ class Emitter {
 		var held:Int = reg(tDyn);
 		ops.push({op: OGetGlobal, args: [held, hostSlot(owner, field)]});
 		ops.push({op: OSafeCast, args: [slot, held]});
+	}
+
+	/**
+	 * Writes a static of a type the world holds, where it lives.
+	 *
+	 * The counterpart of `emitHostRead`, and the class is what stays put here too: the global holds
+	 * that and the field is written on it through the same cache an ordinary field write uses.
+	 *
+	 * @param owner The host class's path.
+	 * @param field The static's name.
+	 * @param value What to write.
+	 */
+	function emitHostWrite(owner:String, field:String, value:Expr):Void {
+		var target:Int = reg(tDyn);
+		ops.push({op: OGetGlobal, args: [target, hostSlot(owner, '')]});
+
+		var held:Int = named(field);
+		var wanted:Int = infer(value);
+		var cell:Int = siteSlot();
+		var site:Int = siteIndex(field, 'set_');
+
+		/** A number goes in as a number, for the reason the ordinary field write says. */
+		if (wanted == tI32 || wanted == tF64) {
+			var raw:Int = reg(wanted);
+			into(value, raw);
+
+			var writer:Int = wanted == tI32 ? storeIntIndex() : storeFloatIndex();
+			ops.push({op: OCallN, args: [reg(tVoid), writer, target, held, raw, cell, site]});
+			return;
+		}
+
+		var written:Int = dynOf(value);
+		ops.push({op: OCallN, args: [reg(tVoid), storeIndex(), target, held, written, cell, site]});
 	}
 
 	/**

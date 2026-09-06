@@ -506,6 +506,29 @@ class Backend {
 	}
 
 	/**
+	 * What a name for a scripted class should answer with, once that class has been compiled.
+	 *
+	 * `install` moves a compiled class's statics onto the class the batch laid out and says that is
+	 * where they live from then on. Answering with the scripted class instead gave a static two
+	 * homes: code of the owning batch reaches the laid-out field directly and everything else came
+	 * through here, so `Nav.go` stored a value its own module read back and no other module could
+	 * see. The screen a project asked for was set in one place and looked for in another, and
+	 * nothing reported it.
+	 *
+	 * @param found What the name resolved to.
+	 * @param env The world.
+	 * @return The class the batch laid out, or what was passed in when there is none.
+	 */
+	static function standing(found:Dynamic, env:Environment):Dynamic {
+		if (env == null || !(found is ScriptedClass))
+			return found;
+
+		var native:Null<Class<Dynamic>> = env.compiled.get((cast found : ScriptedClass).path);
+
+		return native == null ? found : cast native;
+	}
+
+	/**
 	 * Finds what a name a script wrote refers to.
 	 *
 	 * **The module's own imports come first, and leaving them out was a real bug.** A script that
@@ -535,16 +558,16 @@ class Backend {
 			 */
 			var imported:Dynamic = module.interp.constantMirror(module.interp.imports.get(owner));
 			if (imported != null)
-				return imported;
+				return standing(imported, env);
 		}
 
 		if (globals && env.variables.exists(owner)) {
 			var held:Dynamic = env.variables.get(owner);
 			if (held != null)
-				return held;
+				return standing(held, env);
 		}
 
-		return hxscript.types.TypeTools.resolve(owner, env);
+		return standing(hxscript.types.TypeTools.resolve(owner, env), env);
 	}
 
 	/**
