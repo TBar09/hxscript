@@ -40,14 +40,14 @@ The build says so, once, in one block:
      | | | | >  < \__ \| (__ | |   | || |_) || |_
      |_| |_|/_/\_\|___/ \___||_|   |_|| .__/  \__|
                                       |_|
-     hxscript 2.0.0   hashlink   HashLink bytecode compiler
-     wired    heaps
-     reach    57 type(s), 5 abstract(s), 10 bridge(s)
+     hxscript 2.0.4   hashlink   HashLink bytecode compiler
+     wired    heaps 2D, heaps 3D, host (host)
+     reach    61 type(s), 5 abstract(s), 11 bridge(s)
      native   built export/hlc/Sandbox.exe
 ```
 
 The counts are one real build's and yours will differ; what to read them for is whether each is
-non-zero. The line that matters most is the `hxscript 2.0.0 ...` one, which names the backend.
+non-zero. The line that matters most is the first, which names the backend.
 **A compiled backend is opt-in on both targets that have one**, and a build meaning to have one and
 not having it is a program running scripts at a fraction of the speed it was measured at, with
 nothing anywhere saying so. That line says which of the two you got.
@@ -132,6 +132,9 @@ Everything the library reads. Only the first group is likely to concern you.
 | --- | --- |
 | `-lib hxscript` | the whole of the setup, including for a game library already in the build |
 | `-D hxscript_host=<packages>` | comma-separated packages to scan for `@:scriptable` and `@:scriptAmbient` |
+| `-D hxscript_bridge_types=<types>` | comma-separated classes to bridge, beside whatever the presets already bridge |
+| `-D hxscript_bridge_packages=<roots>` | comma-separated roots; every eligible class under them is bridged |
+| `-D hxscript_bridge_all` | every eligible class under every active library's roots. See [what gets bridged](#choosing-what-gets-bridged) |
 | `-D hxscript_verbose` | print every type, bridge and abstract the setup touched, under the block it already prints |
 | `-D hxscript_no_banner` | print nothing at all. `HXSCRIPT_NO_BANNER=1` does the same from the environment |
 | `-D hxscript_keep=<types>` | comma-separated standard-library types to keep beyond the default set. See [dead code elimination](#dead-code-elimination) |
@@ -378,6 +381,20 @@ Two constraints either way:
 - **`final` classes cannot be bridged.** That is a useful lever rather than only a limit: keeping a
   hot-path class `final` lets the compiler devirtualise it and keeps it off the scriptable list on
   purpose.
+
+### Choosing what gets bridged
+
+By default the bridged set is each active library's curated list, which is small. Three defines add
+to it, and every one of them is a decision about binary size rather than about what is possible:
+
+| Flag | Bridges |
+| --- | --- |
+| `-D hxscript_bridge_types=StringBuf,game.Actor` | exactly those classes |
+| `-D hxscript_bridge_packages=flixel,openfl.display` | every eligible class under those roots |
+| `-D hxscript_bridge_all` | every eligible class under every active library's roots |
+
+They add rather than replace, so the presets keep bridging what they bridged. `-D hxscript_verbose`
+lists what came out, and `-D hxscript_no_bridges` turns the whole step off.
 
 [`advanced.md`](advanced.md#1-generating-bridges) generates bridges from a list with a macro, for a
 host that wants neither the scan nor the hand-written files.

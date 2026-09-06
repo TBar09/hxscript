@@ -12,7 +12,7 @@ file the last error came from, so the round trip between the log and the editor 
 ```
 ┌─ projects ────┬─ Heaps playground ─────────────────┐
 │ ▸ heaps       │ kind      heaps                    │
-│ ▸ plain       │ folder    .../projects/heaps       │
+│ ▸ fps         │ folder    .../projects/heaps       │
 │ ▸ my-thing    │ scripts   1 file(s)                │
 │               │ entry     Playground (an h2d       │
 │               │                       object)     │

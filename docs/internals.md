@@ -8,11 +8,11 @@ rationale is written as a narrative instead, in
 [how-it-works.md, part three](how-it-works.md#part-three-compiling-to-hashlink), because almost
 every decision in it follows from two facts about the target rather than standing on its own.
 
-## src/hxscript/openfl/SoundTools.hx
+## src/hxscript/lib/openfl/SoundTools.hx
 
 ### class SoundTools
 
-The companion to [`TriangleTools`](../src/hxscript/flixel/TriangleTools.hx), for the same two reasons
+The companion to [`TriangleTools`](../src/hxscript/lib/flixel/TriangleTools.hx), for the same two reasons
 and in the same shape. A script
 that synthesises audio has no way to hand it over: `lime.utils.UInt8Array` is an abstract whose
 only constructor is inline and generic, and `AudioBuffer.data` wants one. Inline members of an
@@ -28,7 +28,7 @@ produces and what the audio system wants.
 `@:keep` because nothing in a host calls this. Only scripts do, and dead code elimination cannot
 see that.
 
-## src/hxscript/flixel/TriangleTools.hx
+## src/hxscript/lib/flixel/TriangleTools.hx
 
 ### class TriangleTools
 
@@ -1163,7 +1163,7 @@ causes them. Anything else, whether a host's exception crossing a script boundar
 script of a value that is not an exception, has only a message, and pretending otherwise
 would put a wrong position on it.
 
-### src/hxscript/flixel/TriangleTools.hx :: public static function quads(strip:FlxStrip, vertices:Array<Float>, uvs:Array<Float>, quads:Int):Void
+### src/hxscript/lib/flixel/TriangleTools.hx :: public static function quads(strip:FlxStrip, vertices:Array<Float>, uvs:Array<Float>, quads:Int):Void
 
 Vertices and UVs are interleaved x/y pairs, four vertices per quad in corner order. Indices are
 derived rather than passed, because for quads they are entirely predictable and having a script
@@ -1492,7 +1492,7 @@ bridge generator wired cannot be a name the startup code forgot to register.
 A `custom` record whose `define` matches a shipped one replaces it, so overriding a preset and
 adding one are the same gesture.
 
-### src/hxscript/stdlib/BytesTools.hx :: class BytesTools
+### src/hxscript/lib/stdlib/BytesTools.hx :: class BytesTools
 
 Reading bytes one at a time from a script is expensive twice over. Every accessor on
 `haxe.io.Bytes` is declared `inline` in the standard library, so none of them has a runtime
@@ -1506,7 +1506,7 @@ call, so the copy pays for itself long before the file is finished with.
 `@:keep` because nothing in a host calls this; only scripts do, by name, and dead code elimination
 cannot see that.
 
-### src/hxscript/stdlib/Shims.hx :: class Shims
+### src/hxscript/lib/stdlib/Shims.hx :: class Shims
 
 `StringTools.hex` and `lpad` are `inline`, so under the default `-dce std` every compiled call
 site substituted them, nothing references them, and they are eliminated, so a script calling one

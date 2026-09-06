@@ -306,12 +306,12 @@ Nine targets, no CI, so every box below was ticked by hand.
 
 **Passes the suite, and runs a real application.**
 
-- [x] **hxcpp** (`cpp`) — 332/332 interpreted, as cppia, and as cppia with the JIT. Ships
+- [x] **hxcpp** (`cpp`) — 350/350 interpreted, as cppia, and as cppia with the JIT. Ships
       [`apps/sandbox`](apps/sandbox): lime, openfl, flixel.
-- [x] **HashLink** (`hl`) — 332/332 interpreted and as HashLink bytecode. Ships
+- [x] **HashLink** (`hl`) — 350/350 interpreted and as HashLink bytecode. Ships
       [`apps/sandbox-heaps`](apps/sandbox-heaps): heaps, as an HL/C binary.
 - [x] **eval** — runs [`examples/battle`](examples/battle). One case, `an abstract Map through its
-      alias`, kills the eval VM rather than answering it, so eval's `host` part reads 29/30. That is
+      alias`, kills the eval VM rather than answering it, so eval's `host` part reads 43/44. That is
       the VM, not this library.
 
 **Runs the suite, with known failures.**
