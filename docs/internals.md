@@ -689,11 +689,25 @@ is renamed, an ordinary method that becomes `inline`. Build with `-D hxscript_ve
 exactly what was wired.
 
 `custom` is the escape hatch, and the supported way to describe a library that is not here or to
-describe the host's own classes. Append to it from an init macro, before `Autowire` runs:
+describe the host's own classes. Append to it from a static function an init macro calls, since a
+flag naming `custom` is read as a type path and asks for a type by that name:
+
+```haxe
+// macros/Setup.hx
+package macros;
+
+class Setup {
+	public static function init():Void {
+		hxscript.setup.Presets.custom.push({define: 'mygame', title: 'my game', ...});
+	}
+}
+```
 
 ```
---macro hxscript.setup.Presets.custom.push({define: 'mygame', title: 'my game', ...})
+--macro macros.Setup.init()
 ```
+
+`Autowire` reads the list from `onAfterInitMacros`, so the flag runs before it wherever it sits.
 
 ### public static final CORE:Library =
 

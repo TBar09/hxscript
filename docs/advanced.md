@@ -170,11 +170,30 @@ libraries by writing its own `import`, as in Haxe. Fill it in your own record on
 library and the host and have decided the answer for yourself.
 
 Hand it to [`Presets.custom`](../src/hxscript/setup/Presets.hx) from an init macro, and the rest
-happens on its own:
+happens on its own. The push goes in a static function the flag calls, rather than in the flag
+itself, for two reasons. An init macro reads every name before the last as a **type path**, so a flag
+naming `custom` asks for a type by that name and the build stops with `Module hxscript.setup.Presets
+does not define type custom`. And an hxml argument ends where its line does, so a record written
+across a dozen lines arrives as a dozen arguments, and the second of them fails with `Invalid
+character: :`. A macro class of the project's own has neither problem:
+
+```haxe
+// macros/Setup.hx
+package macros;
+
+class Setup {
+	public static function init():Void {
+		hxscript.setup.Presets.custom.push({define: 'mylib', ...});
+	}
+}
+```
 
 ```
---macro hxscript.setup.Presets.custom.push({define: 'mylib', ...})
+--macro macros.Setup.init()
 ```
+
+Where the flag sits among the others does not matter. `Autowire` reads the list from
+`onAfterInitMacros`, which runs once every init macro has.
 
 Nothing in the record imports the library it describes, which is the point: these are strings, so
 the same record is read by the macro that wires the build and by the code that runs at startup, and
